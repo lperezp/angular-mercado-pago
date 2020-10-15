@@ -1,0 +1,81 @@
+<form
+  class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+  #formContainer
+  [formGroup]="paymentForm"
+  (ngSubmit)="submit()"
+>
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Número de tarjeta</label
+  >
+  <input
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    data-checkout="cardNumber"
+    #ccNumber
+    formControlName="cardNumber"
+    maxlength="20"
+    (keyup)="creditCardNumberSpacing()"
+    type="tel"
+  />
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Código de seguridad</label
+  >
+  <input
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    data-checkout="securityCode"
+    type="text"
+  />
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Mes de Expiración</label
+  >
+  <input
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    data-checkout="cardExpirationMonth"
+    type="text"
+  />
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Año de Expiración</label
+  >
+  <input
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    data-checkout="cardExpirationYear"
+    type="text"
+  />
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Titular de la tarjeta</label
+  >
+  <input
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+    data-checkout="cardholderName"
+    type="text"
+  />
+  <label class="block text-gray-700 text-sm font-bold mb-2"
+    >Tipo de documento</label
+  >
+  <div *ngIf="typesNeeded">
+    <select
+      class="block appearance-none w-full bg-white border border-gray-400 hover:border-gray-500 px-4 py-2 pr-8 rounded shadow leading-tight focus:outline-none focus:shadow-outline"
+      id="docType"
+      data-checkout="docType"
+    >
+      <option *ngFor="let id of identifications" [value]="id.id">
+        {{ id.name }}
+      </option>
+    </select>
+    <label class="block text-gray-700 text-sm font-bold mb-2"
+      >Número de documento</label
+    >
+    <input
+      class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+      data-checkout="docNumber"
+      type="text"
+    />
+  </div>
+  <div class="flex items-center justify-center mt-2">
+    <button
+      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      type="submit"
+    >
+      Realizar pago
+    </button>
+  </div>
+</form>
