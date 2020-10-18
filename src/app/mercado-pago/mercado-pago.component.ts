@@ -6,8 +6,12 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-
-import { Identifications } from '../models/indentification.model';
+import {
+  CardToken,
+  Identifications,
+  Issuers,
+  PaymentMethod,
+} from '../models/MercadoPago.model';
 
 declare const Mercadopago: any;
 
@@ -17,6 +21,9 @@ declare const Mercadopago: any;
   styleUrls: ['./mercado-pago.component.scss'],
 })
 export class MercadoPagoComponent implements OnInit, AfterViewInit {
+  minDocNumber = 5;
+  maxDocNumber = 20;
+  typeDocNumber = 'string';
   paymentForm: FormGroup = this.fb.group({
     cardNumber: [
       '',
@@ -26,13 +33,25 @@ export class MercadoPagoComponent implements OnInit, AfterViewInit {
         Validators.minLength(17),
       ],
     ],
+    securityCode: ['', [Validators.required, Validators.minLength(3)]],
+    cardExpirationMonth: ['', [Validators.required, Validators.minLength(2)]],
+    cardExpirationYear: ['', [Validators.required, Validators.minLength(2)]],
+    cardholderName: ['', Validators.required],
+    docType: ['', [Validators.required]],
+    docNumber: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(this.minDocNumber),
+        Validators.maxLength(this.maxDocNumber),
+      ],
+    ],
   });
   publicKey = 'TEST-20ea027b-79b0-42de-beb1-222d2ca37d25';
   typesNeeded: boolean;
   identifications: Identifications[];
   @ViewChild('ccNumber') ccNumberField: ElementRef;
   @ViewChild('formContainer') formRef: ElementRef;
-  identificationTypes;
   constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {}
@@ -45,7 +64,7 @@ export class MercadoPagoComponent implements OnInit, AfterViewInit {
   }
 
   appendScript(): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const scriptTag = document.createElement('script');
       scriptTag.src =
         'https://secure.mlstatic.com/sdk/javascript/v1/mercadopago.js';
@@ -55,13 +74,23 @@ export class MercadoPagoComponent implements OnInit, AfterViewInit {
   }
 
   getTypes(): void {
-    Mercadopago.getIdentificationTypes((err, data) => {
-      if (err !== 200) {
-        throw err;
+    Mercadopago.getIdentificationTypes(
+      (err: number, data: Identifications[]) => {
+        if (err !== 200) {
+          throw err;
+        }
+        this.identifications = data;
+        this.typesNeeded = true;
       }
-      this.identifications = data;
-      this.typesNeeded = true;
-    });
+    );
+  }
+
+  validateNumber(event): void {
+    const pattern = /[0-9]/;
+    const inputChar = String.fromCharCode(event.charCode);
+    if (!pattern.test(inputChar)) {
+      event.preventDefault();
+    }
   }
 
   creditCardNumberSpacing(): void {
@@ -104,27 +133,63 @@ export class MercadoPagoComponent implements OnInit, AfterViewInit {
   }
 
   callGetPaymentMethod(binObj): void {
-    Mercadopago.getPaymentMethod(binObj, (err, handler) => {
-      if (err !== 200) {
-        throw err;
+    Mercadopago.getPaymentMethod(
+      binObj,
+      (err: number, handler: PaymentMethod[]) => {
+        if (err !== 200) {
+          throw err;
+        }
+        console.log('PaymentMethod', handler);
+        const cardHandler = handler[0];
+        this.getIssuers(cardHandler.id);
       }
-      const cardHandler = handler[0];
-      this.getIssuers(cardHandler.id);
-    });
+    );
+  }
+
+  selectDocType(): void {
+    // tslint:disable-next-line: no-string-literal
+    const optionSelected = this.paymentForm.controls['docType'].value;
+    const typeDoc = this.identifications.filter(
+      (element) => element.id === optionSelected
+    );
+    const { min_length, max_length, type } = typeDoc[0];
+    this.minDocNumber = min_length;
+    this.maxDocNumber = max_length;
+    this.typeDocNumber = type;
+    // tslint:disable-next-line: no-string-literal
+    this.paymentForm.controls['docNumber'].setValue('');
+  }
+
+  validateDocNumber(event): void {
+    if (this.typeDocNumber === 'number') {
+      const pattern = /[0-9]/;
+      const inputChar = String.fromCharCode(event.charCode);
+      if (!pattern.test(inputChar)) {
+        event.preventDefault();
+      }
+    }
   }
 
   getIssuers(id: string): void {
-    Mercadopago.getIssuers(id, (err, res) => {
-      console.log(res);
+    Mercadopago.getIssuers(id, (err: number, res: Issuers[]) => {
+      if (err !== 200) {
+        console.error(err);
+        throw err;
+      }
+      console.log('Issuers', res);
     });
   }
 
   submit(): void {
-    Mercadopago.createToken(this.formRef.nativeElement, (err, res) => {
-      if (err !== 200) {
-        throw err;
+    Mercadopago.createToken(
+      this.formRef.nativeElement,
+      (err: number, res: CardToken) => {
+        if (err !== 200) {
+          console.error(err);
+          throw err;
+        }
+        console.log('CardToken', res);
       }
-      console.log(res);
-    });
+    );
   }
 }
